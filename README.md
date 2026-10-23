@@ -74,7 +74,7 @@ lib/
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository_url>
+   git clone <https://github.com/mohamed-riash/personal_expense_tracker.git>
    cd personal_expense_tracker
    ```
 
