@@ -50,8 +50,6 @@ lib/
 │       ├── expense_state.dart         # ExpenseState data holder (transactions, totals, loading)
 │       ├── subscription_cubit.dart    # Subscriptions lifecycle, upcoming dues, monthly cost
 │       └── subscription_state.dart   # SubscriptionState data holder (list, upcoming, cost, loading)
-├── constants/
-│   └── colors.dart                   # Global design palette (AppColors: primary, surface, accent)
 ├── data/
 │   ├── local/
 │   │   └── db_helper.dart             # SQLite helper (CRUD for offline storage; currently optional/dormant)
@@ -74,6 +72,8 @@ lib/
 │   │   └── subscriptions_screen.dart    # Subscriptions overview, upcoming bills, toggle status
 │   └── widgets/
 │       └── transaction_item.dart        # Reusable ListTile widget displaying a single transaction
+├── utils/
+│   └── app_colors.dart                  # Global design palette (AppColors: primary, accent, surface)
 └── main.dart                            # Application root, Firebase initialization, auth routing
 ```
 
@@ -81,24 +81,28 @@ lib/
 
 ## 3. Dependency Injection and Service Wiring
 
-Dependency injection in the project is achieved through **Widget Tree Scoping** using `flutter_bloc`'s `BlocProvider` and `MultiBlocProvider`:
+Dependency injection in the project is achieved through **Widget Tree Scoping** using `flutter_bloc`'s `BlocProvider`:
 
 * In [main.dart](file:///c:/Users/abori/Desktop/VS Code/Projects/personal_expense_tracker/lib/main.dart):
   ```dart
-  MultiBlocProvider(
-    providers: [
-      BlocProvider<ExpenseCubit>(
-        create: (context) => ExpenseCubit()..getTransactions(),
+  BlocProvider(
+    create: (context) => ExpenseCubit(),
+    child: MaterialApp(
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            return const HomeScreen();
+          }
+          return const AuthScreen();
+        },
       ),
-      BlocProvider<SubscriptionCubit>(
-        create: (context) => SubscriptionCubit()..getSubscriptions(),
-      ),
-    ],
-    child: MaterialApp(...),
+    ),
   )
   ```
-* Both `ExpenseCubit` and `SubscriptionCubit` are instantiated at the root level, making them globally accessible across all screens and dialogs.
-* Inside each Cubit, the underlying services (`FirebaseService` and `SubscriptionService`) are instantiated as internal singleton-like dependencies.
+* **Global Scope:** `ExpenseCubit` is provided at the application root, making transaction state accessible to `HomeScreen`, `AddTransactionScreen`, `EditTransactionScreen`, and `StatisticsScreen`.
+* **Route Scope:** `SubscriptionCubit` is scoped to the `SubscriptionsScreen` route via `BlocProvider(create: (_) => SubscriptionCubit())` in `HomeScreen`, and provided to `AddSubscriptionScreen` via `BlocProvider.value(value: context.read<SubscriptionCubit>())`.
+* Inside each Cubit, the underlying services (`FirebaseService` and `SubscriptionService`) are instantiated as internal dependencies.
 
 ---
 

@@ -1,1 +1,28 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"expense-tracker-app-7140e","appId":"1:122557499469:android:69016011459efbf41f7404","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"expense-tracker-app-7140e","configurations":{"android":"1:122557499469:android:69016011459efbf41f7404","ios":"1:122557499469:ios:e8bc5302a1d192c01f7404","macos":"1:122557499469:ios:e8bc5302a1d192c01f7404","web":"1:122557499469:web:49bb9b29a81159fd1f7404","windows":"1:122557499469:web:56d0244dd62c72fb1f7404"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "expense-tracker-app-7140e",
+          "appId": "1:122557499469:android:69016011459efbf41f7404",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "expense-tracker-app-7140e",
+          "configurations": {
+            "android": "1:122557499469:android:69016011459efbf41f7404",
+            "ios": "1:122557499469:ios:e8bc5302a1d192c01f7404",
+            "macos": "1:122557499469:ios:e8bc5302a1d192c01f7404",
+            "web": "1:122557499469:web:49bb9b29a81159fd1f7404",
+            "windows": "1:122557499469:web:56d0244dd62c72fb1f7404"
+          }
+        }
+      }
+    }
+  }
+}

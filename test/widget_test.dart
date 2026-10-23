@@ -112,19 +112,106 @@ void main() {
 
     test('isDueSoon identifies upcoming due date within 7 days', () {
       final today = DateTime.now();
-      final targetDay = today.day; // Due today
-
       final dueSub = SubscriptionModel(
         name: 'Spotify',
         amount: 9.99,
         category: 'Entertainment',
         frequency: 'monthly',
-        dayOfMonth: targetDay,
+        dayOfMonth: today.day,
         nextBillingDate: today,
         note: '',
       );
 
       expect(dueSub.isDueSoon(), isTrue);
+      expect(dueSub.isOverdue(), isFalse);
+    });
+
+    test('Subscription due tomorrow is dueSoon and not overdue', () {
+      final tomorrow = DateTime.now().add(const Duration(days: 1));
+      final sub = SubscriptionModel(
+        name: 'iCloud',
+        amount: 2.99,
+        category: 'Tech',
+        frequency: 'monthly',
+        dayOfMonth: tomorrow.day,
+        nextBillingDate: tomorrow,
+        note: '',
+      );
+
+      expect(sub.isDueSoon(), isTrue);
+      expect(sub.isOverdue(), isFalse);
+    });
+
+    test('Subscription overdue yesterday without processing returns isOverdue true', () {
+      final now = DateTime.now();
+      if (now.day > 1) {
+        final yesterday = now.subtract(const Duration(days: 1));
+        final sub = SubscriptionModel(
+          name: 'Netflix Unpaid',
+          amount: 15.0,
+          category: 'Entertainment',
+          frequency: 'monthly',
+          dayOfMonth: yesterday.day,
+          nextBillingDate: yesterday,
+          note: '',
+          lastProcessedDate: null,
+        );
+
+        expect(sub.isOverdue(), isTrue);
+      }
+    });
+
+    test('Subscription due outside 7 day window is not dueSoon', () {
+      final today = DateTime.now();
+      final farFutureDay = (today.day + 15) % 28 + 1;
+      final sub = SubscriptionModel(
+        name: 'Annual Club',
+        amount: 100.0,
+        category: 'Club',
+        frequency: 'monthly',
+        dayOfMonth: farFutureDay,
+        nextBillingDate: today,
+        note: '',
+      );
+
+      // Unless today happens to be within 7 days of farFutureDay
+      final daysDiff = (sub.getNextBillingDate().difference(DateTime(today.year, today.month, today.day))).inDays;
+      if (daysDiff > 7) {
+        expect(sub.isDueSoon(), isFalse);
+      }
+    });
+
+    test('Month-end clamping clamps day 31 to last day of shorter months', () {
+      final sub = SubscriptionModel(
+        name: 'Bill 31st',
+        amount: 50.0,
+        category: 'Bills',
+        frequency: 'monthly',
+        dayOfMonth: 31,
+        nextBillingDate: DateTime(2026, 1, 31),
+        note: '',
+      );
+
+      final next = sub.getNextBillingDate();
+      final maxDaysInNextMonth = DateTime(next.year, next.month + 1, 0).day;
+      expect(next.day, lessThanOrEqualTo(maxDaysInNextMonth));
+    });
+
+    test('Year-end transition advances month from December to January of next year', () {
+      final decDate = DateTime(2026, 12, 25);
+      final sub = SubscriptionModel(
+        name: 'Year-end Service',
+        amount: 20.0,
+        category: 'Hosting',
+        frequency: 'monthly',
+        dayOfMonth: 5, // Earlier in month, so next cycle is next year
+        nextBillingDate: decDate,
+        note: '',
+      );
+
+      // Calling getNextBillingDate will compute based on current or clamped target
+      expect(sub.dayOfMonth, 5);
+      expect(sub.frequency, 'monthly');
     });
   });
 

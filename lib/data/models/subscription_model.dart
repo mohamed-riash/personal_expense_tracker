@@ -63,18 +63,29 @@ class SubscriptionModel {
 
     switch (frequency) {
       case 'monthly':
-        if (now.day <= dayOfMonth) {
-          nextDate = DateTime(now.year, now.month, dayOfMonth);
+        int maxDayThisMonth = DateTime(now.year, now.month + 1, 0).day;
+        int billingDayThisMonth = dayOfMonth.clamp(1, maxDayThisMonth);
+        if (now.day <= billingDayThisMonth) {
+          nextDate = DateTime(now.year, now.month, billingDayThisMonth);
         } else {
-          nextDate = DateTime(now.year, now.month + 1, dayOfMonth);
+          int nextYear = now.month == 12 ? now.year + 1 : now.year;
+          int nextMonth = now.month == 12 ? 1 : now.month + 1;
+          int maxDayNextMonth = DateTime(nextYear, nextMonth + 1, 0).day;
+          int billingDayNextMonth = dayOfMonth.clamp(1, maxDayNextMonth);
+          nextDate = DateTime(nextYear, nextMonth, billingDayNextMonth);
         }
         break;
       case 'yearly':
-        if (now.month < nextBillingDate.month ||
-            (now.month == nextBillingDate.month && now.day <= dayOfMonth)) {
-          nextDate = DateTime(now.year, nextBillingDate.month, dayOfMonth);
+        int targetMonth = nextBillingDate.month;
+        int maxDayThisYear = DateTime(now.year, targetMonth + 1, 0).day;
+        int billingDayThisYear = dayOfMonth.clamp(1, maxDayThisYear);
+        if (now.month < targetMonth ||
+            (now.month == targetMonth && now.day <= billingDayThisYear)) {
+          nextDate = DateTime(now.year, targetMonth, billingDayThisYear);
         } else {
-          nextDate = DateTime(now.year + 1, nextBillingDate.month, dayOfMonth);
+          int maxDayNextYear = DateTime(now.year + 1, targetMonth + 1, 0).day;
+          int billingDayNextYear = dayOfMonth.clamp(1, maxDayNextYear);
+          nextDate = DateTime(now.year + 1, targetMonth, billingDayNextYear);
         }
         break;
       default:
@@ -95,8 +106,43 @@ class SubscriptionModel {
   bool isOverdue() {
     DateTime today = DateTime.now();
     DateTime todayDateOnly = DateTime(today.year, today.month, today.day);
-    DateTime next = getNextBillingDate();
-    DateTime nextDateOnly = DateTime(next.year, next.month, next.day);
-    return todayDateOnly.isAfter(nextDateOnly);
+
+    switch (frequency) {
+      case 'monthly':
+        int maxDayThisMonth = DateTime(today.year, today.month + 1, 0).day;
+        int billingDayThisMonth = dayOfMonth.clamp(1, maxDayThisMonth);
+        DateTime currentCycleDate =
+            DateTime(today.year, today.month, billingDayThisMonth);
+
+        if (todayDateOnly.isAfter(currentCycleDate)) {
+          final alreadyProcessedThisMonth = lastProcessedDate != null &&
+              lastProcessedDate!.year == today.year &&
+              lastProcessedDate!.month == today.month;
+          return !alreadyProcessedThisMonth;
+        }
+        return false;
+
+      case 'yearly':
+        int targetMonth = nextBillingDate.month;
+        int maxDayThisYear = DateTime(today.year, targetMonth + 1, 0).day;
+        int billingDayThisYear = dayOfMonth.clamp(1, maxDayThisYear);
+        DateTime currentCycleDate =
+            DateTime(today.year, targetMonth, billingDayThisYear);
+
+        if (todayDateOnly.isAfter(currentCycleDate)) {
+          final alreadyProcessedThisYear = lastProcessedDate != null &&
+              lastProcessedDate!.year == today.year;
+          return !alreadyProcessedThisYear;
+        }
+        return false;
+
+      default:
+        DateTime targetDateOnly = DateTime(
+          nextBillingDate.year,
+          nextBillingDate.month,
+          nextBillingDate.day,
+        );
+        return todayDateOnly.isAfter(targetDateOnly);
+    }
   }
 }

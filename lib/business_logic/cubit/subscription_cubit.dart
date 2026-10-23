@@ -52,6 +52,9 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   void _startListening() {
     _subscriptionsSubscription?.cancel();
+    if (_firebaseService.getCurrentUser() == null) {
+      _cachedUpcoming = [];
+    }
     _subscriptionsSubscription =
         _firebaseService.getSubscriptionsStream().listen((subscriptions) {
       if (!isClosed) {
